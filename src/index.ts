@@ -17,7 +17,8 @@ import {
   registerSettingsRoute,
   registerStaticRoutes,
   registerVerificationRoute,
-  registerWelcomeRoute
+  registerWelcomeRoute,
+  registerHydraRoutes
 } from './routes'
 
 const app = express()
@@ -52,6 +53,7 @@ registerVerificationRoute(app)
 registerWelcomeRoute(app)
 registerErrorRoute(app)
 registerWelcomeRoute(app)
+registerHydraRoutes(app)
 
 register404Route(app)
 register500Route(app)
