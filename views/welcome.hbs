@@ -15,12 +15,21 @@
     <div class="card">
       <h2 class="typography-h2">Other User Interface Screens</h2>
       <div class="row">
-        {{> ui_screen_button testId="login" link="login" label="Sign In" disabled=hasSession}}
-        {{> ui_screen_button testId="sign-up" link="registration" label="Sign Up" disabled=hasSession}}
-        {{> ui_screen_button testId="recover-account" link="recovery" label="Recover Account" disabled=hasSession}}
+        {{#if (not hasSession)}}
+        {{> ui_screen_button testId="login" link="login" label="Sign In"}}
+        {{> ui_screen_button testId="sign-up" link="registration" label="Sign Up"}}
+        {{> ui_screen_button testId="recover-account" link="recovery" label="Recover Account"}}
+        {{else}}
+        {{> ui_screen_button testId="backoffice" href="https://backoffice.fiveten.tech/" label="Backoffice"}}
+        {{#if isOverlord}}
+        {{> ui_screen_button testId="userAdmin" href=oryAdminUrl label="User Admin"}}
+        {{/if}}
+        {{> ui_screen_button testId="account-settings" link="settings" label="Account Settings" }}
+        {{> ui_screen_button testId="logout" href=logoutUrl label="Logout" }}
+        {{/if}}
+        {{#if hasAddressToVerify}}
         {{> ui_screen_button testId="verify-account" link="verification" label="Verify Account"}}
-        {{> ui_screen_button testId="account-settings" link="settings" label="Account Settings" disabled=(not hasSession)}}
-        {{> ui_screen_button testId="logout" href=logoutUrl label="Logout" disabled=(not hasSession) }}
+        {{/if}}
       </div>
     </div>
   </div>

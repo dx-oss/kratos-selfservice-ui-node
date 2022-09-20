@@ -21,14 +21,18 @@ export const createWelcomeRoute: RouteCreator =
           .createSelfServiceLogoutFlowUrlForBrowsers(req.header("cookie"))
           .catch(() => ({ data: { logout_url: "" } }))
       ).data.logout_url || ""
+    const hasAddressToVerify = session?.identity?.verifiable_addresses?.some(
+      (vfa) => !vfa.verified,
+    )
+    const isOverlord = (session?.identity?.metadata_public as any)?.overlord
 
     res.render("welcome", {
-      session: session
-        ? JSON.stringify(session, null, 2)
-        : `No valid Ory Session was found.
-Please sign in to receive one.`,
       hasSession: Boolean(session),
       logoutUrl,
+      hasAddressToVerify,
+      isOverlord,
+      backofficeUrl: process.env.BACKOFFICE_URL,
+      oryAdminUrl: process.env.ORY_ADMIN_URL,
     })
   }
 
