@@ -99,7 +99,7 @@ export const requireNoAuth =
     sdk
       .toSession(undefined, req.header("cookie"))
       .then(() => {
-        res.redirect("welcome")
+        res.redirect(process.env.BACKOFFICE_URL as string)
       })
       .catch(() => {
         next()

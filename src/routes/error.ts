@@ -22,7 +22,7 @@ export const createErrorRoute: RouteCreator =
 
     if (!isQuerySet(id)) {
       // No error was send, redirecting back to home.
-      res.redirect("welcome")
+      res.redirect(process.env.BACKOFFICE_URL as string)
       return
     }
 
@@ -41,7 +41,7 @@ export const createErrorRoute: RouteCreator =
 
         if (err.response.status === 404) {
           // The error could not be found, redirect back to home.
-          res.redirect("welcome")
+          res.redirect(process.env.BACKOFFICE_URL as string)
           return
         }
 
