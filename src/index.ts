@@ -1,7 +1,8 @@
 // Copyright © 2022 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
+import cookieParser from "cookie-parser"
 import express, { Request, Response } from "express"
-import hbs from "express-handlebars"
+import { engine } from "express-handlebars"
 import * as fs from "fs"
 import * as https from "https"
 import { handlebarsHelpers } from "./pkg"
@@ -24,11 +25,12 @@ import { registerSessionsRoute } from "./routes/sessions"
 const app = express()
 
 app.use(middlewareLogger)
+app.use(cookieParser())
 app.set("view engine", "hbs")
 
 app.engine(
   "hbs",
-  hbs({
+  engine({
     extname: "hbs",
     layoutsDir: `${__dirname}/../views/layouts/`,
     partialsDir: `${__dirname}/../views/partials/`,
@@ -37,7 +39,6 @@ app.engine(
   }),
 )
 
-registerStaticRoutes(app)
 registerHealthRoute(app)
 registerLoginRoute(app)
 registerRecoveryRoute(app)
@@ -52,6 +53,7 @@ app.get("/", (req: Request, res: Response) => {
   res.redirect(303, "welcome")
 })
 
+registerStaticRoutes(app)
 register404Route(app)
 register500Route(app)
 
