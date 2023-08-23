@@ -1,7 +1,10 @@
 // Copyright © 2022 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
-import { UiNode } from "@ory/client"
-import { Typography, Divider, ButtonLink, MenuLink } from "@ory/elements-markup"
+import {
+  UiNode,
+  ErrorAuthenticatorAssuranceLevelNotSatisfied,
+} from "@ory/client"
+import { ButtonLink, Divider, MenuLink, Typography } from "@ory/elements-markup"
 import { filterNodesByGroups, getNodeLabel } from "@ory/integrations/ui"
 import { AxiosError } from "axios"
 import { NextFunction, Response } from "express"
@@ -9,9 +12,9 @@ import { RouteOptionsCreator } from "./route"
 import sdk, { apiBaseUrl } from "./sdk"
 import { toUiNodePartial } from "./ui"
 
+export * from "./logger"
 export * from "./middleware"
 export * from "./route"
-export * from "./logger"
 
 export const removeTrailingSlash = (s: string) => s.replace(/\/$/, "")
 export const getUrlForFlow = (
@@ -31,8 +34,20 @@ export const defaultConfig: RouteOptionsCreator = () => {
   }
 }
 
+export const isUUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
 export const isQuerySet = (x: any): x is string =>
   typeof x === "string" && x.length > 0
+
+const isErrorAuthenticatorAssuranceLevel = (
+  err: unknown,
+): err is ErrorAuthenticatorAssuranceLevelNotSatisfied => {
+  return (
+    (err as ErrorAuthenticatorAssuranceLevelNotSatisfied).error?.id ==
+    "session_aal2_required"
+  )
+}
 
 // Redirects to the specified URL if the error is an AxiosError with a 404, 410,
 // or 403 error code.
@@ -49,6 +64,18 @@ export const redirectOnSoftError =
       err.response.status === 410 ||
       err.response.status === 403
     ) {
+      // in some cases Kratos will require us to redirect to a different page when the session_aal2_required
+      // for example, when recovery redirects us to settings
+      // but settings requires us to redirect to login?aal=aal2
+      const authenticatorAssuranceLevelError = err.response.data as unknown
+      if (
+        isErrorAuthenticatorAssuranceLevel(authenticatorAssuranceLevelError)
+      ) {
+        res.redirect(
+          authenticatorAssuranceLevelError.redirect_browser_to || redirectTo,
+        )
+        return
+      }
       res.redirect(`${redirectTo}`)
       return
     }
@@ -57,7 +84,6 @@ export const redirectOnSoftError =
   }
 
 export const handlebarsHelpers = {
-  ...require("handlebars-helpers")(),
   jsonPretty: (context: any) => JSON.stringify(context, null, 2),
   onlyNodes: (
     nodes: Array<UiNode>,

@@ -1,19 +1,21 @@
 // Copyright © 2022 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
-import { UiNodeInputAttributes } from "@ory/client"
+import { LoginFlow, UiNodeInputAttributes } from "@ory/client"
 import { SelfServiceFlow, UserAuthCard } from "@ory/elements-markup"
 import {
   filterNodesByGroups,
   isUiNodeInputAttributes,
 } from "@ory/integrations/ui"
+import path from "path"
+import { URLSearchParams } from "url"
 import {
+  RouteCreator,
+  RouteRegistrator,
   defaultConfig,
   getUrlForFlow,
   isQuerySet,
   logger,
   redirectOnSoftError,
-  RouteCreator,
-  RouteRegistrator,
 } from "../pkg"
 
 export const createLoginRoute: RouteCreator =
@@ -55,20 +57,86 @@ export const createLoginRoute: RouteCreator =
     // It is probably a bit strange to have a logout URL here, however this screen
     // is also used for 2FA flows. If something goes wrong there, we probably want
     // to give the user the option to sign out!
-    const logoutUrl =
-      (
-        await frontend
-          .createBrowserLogoutFlow({ cookie: req.header("cookie") })
-          .catch(() => ({ data: { logout_url: "" } }))
-      ).data.logout_url || ""
+    const getLogoutUrl = async (loginFlow: LoginFlow) => {
+      let logoutUrl = ""
+      try {
+        logoutUrl = await frontend
+          .createBrowserLogoutFlow({
+            cookie: req.header("cookie"),
+            returnTo:
+              (return_to && return_to.toString()) || loginFlow.return_to || "",
+          })
+          .then(({ data }) => data.logout_url)
+      } catch (err) {
+        logger.error("Unable to create logout URL", { error: err })
+      } finally {
+        return logoutUrl
+      }
+    }
+
+    const redirectToVerificationFlow = (loginFlow: LoginFlow) => {
+      // we will create a new verification flow and redirect the user to the verification page
+      frontend
+        .createBrowserVerificationFlow({
+          returnTo:
+            (return_to && return_to.toString()) || loginFlow.return_to || "",
+        })
+        .then(({ headers, data: verificationFlow }) => {
+          // we need the csrf cookie from the verification flow
+          res.setHeader("set-cookie", headers["set-cookie"])
+          // encode the verification flow id in the query parameters
+          const verificationParameters = new URLSearchParams({
+            flow: verificationFlow.id,
+            message: JSON.stringify(loginFlow.ui.messages),
+          })
+
+          const baseUrl = req.path.split("/")
+          // get rid of the last part of the path (e.g. "login")
+          baseUrl.pop()
+
+          // redirect to the verification page with the custom message
+          res.redirect(
+            303,
+            // join the base url with the verification path
+            path.join(
+              req.baseUrl,
+              "verification?" + verificationParameters.toString(),
+            ),
+          )
+        })
+        .catch(
+          redirectOnSoftError(
+            res,
+            next,
+            getUrlForFlow(
+              kratosBrowserUrl,
+              "verification",
+              new URLSearchParams({
+                return_to:
+                  (return_to && return_to.toString()) ||
+                  loginFlow.return_to ||
+                  "",
+              }),
+            ),
+          ),
+        )
+    }
 
     return frontend
       .getLoginFlow({ id: flow, cookie: req.header("cookie") })
-      .then(({ data: flow }) => {
-        // Render the data using a view (e.g. Jade Template):
+      .then(async ({ data: flow }) => {
+        if (flow.ui.messages && flow.ui.messages.length > 0) {
+          // the login requires that the user verifies their email address before logging in
+          if (flow.ui.messages.some(({ id }) => id === 4000010)) {
+            // we will create a new verification flow and redirect the user to the verification page
+            return redirectToVerificationFlow(flow)
+          }
+        }
 
+        // Render the data using a view (e.g. Jade Template):
         const initRegistrationQuery = new URLSearchParams({
-          return_to: return_to.toString(),
+          return_to:
+            (return_to && return_to.toString()) || flow.return_to || "",
         })
         if (flow.oauth2_login_request?.challenge) {
           initRegistrationQuery.set(
@@ -77,11 +145,27 @@ export const createLoginRoute: RouteCreator =
           )
         }
 
+        let initRecoveryUrl = ""
         const initRegistrationUrl = getUrlForFlow(
           kratosBrowserUrl,
           "registration",
           initRegistrationQuery,
         )
+        if (!flow.refresh) {
+          initRecoveryUrl = getUrlForFlow(
+            kratosBrowserUrl,
+            "recovery",
+            new URLSearchParams({
+              return_to:
+                (return_to && return_to.toString()) || flow.return_to || "",
+            }),
+          )
+        }
+
+        let logoutUrl = ""
+        if (flow.requested_aal === "aal2" || flow.refresh) {
+          logoutUrl = await getLogoutUrl(flow)
+        }
 
         res.render("login", {
           nodes: flow.ui.nodes,
@@ -98,20 +182,22 @@ export const createLoginRoute: RouteCreator =
             })
             .filter((c) => c !== undefined),
           card: UserAuthCard({
-            title: !(flow.refresh || flow.requested_aal === "aal2")
-              ? "Sign In"
-              : "Two-Factor Authentication",
+            title: flow.refresh
+              ? "Confirm it's you"
+              : flow.requested_aal === "aal2"
+              ? "Two-Factor Authentication"
+              : "Sign In",
             ...(flow.oauth2_login_request && {
               subtitle: `To authenticate ${
-                flow.oauth2_login_request.client.client_name ||
-                flow.oauth2_login_request.client.client_id
+                flow.oauth2_login_request.client?.client_name ||
+                flow.oauth2_login_request.client?.client_id
               }`,
             }),
             flow: flow as SelfServiceFlow,
             flowType: "login",
             cardImage: logoUrl,
             additionalProps: {
-              forgotPasswordURL: "recovery",
+              forgotPasswordURL: initRecoveryUrl,
               signupURL: initRegistrationUrl,
               logoutURL: logoutUrl,
             },

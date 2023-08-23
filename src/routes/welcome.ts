@@ -15,12 +15,16 @@ export const createWelcomeRoute: RouteCreator =
 
     const { frontend } = createHelpers(req, res)
     const session = req.session
+    const { return_to } = req.query
 
     // Create a logout URL
     const logoutUrl =
       (
         await frontend
-          .createBrowserLogoutFlow({ cookie: req.header("cookie") })
+          .createBrowserLogoutFlow({
+            cookie: req.header("cookie"),
+            returnTo: (return_to && return_to.toString()) || "",
+          })
           .catch(() => ({ data: { logout_url: "" } }))
       ).data.logout_url || ""
 
@@ -75,7 +79,8 @@ export const createWelcomeRoute: RouteCreator =
           heading: "Custom UI",
           content:
             "Implementing these pages in your language and framework of choice is straightforward using our SDKs.",
-          action: "https://www.ory.sh/docs/guides/bring-your-user-interface",
+          action:
+            "https://www.ory.sh/docs/kratos/bring-your-own-ui/configure-ory-to-use-your-ui",
           target: "_blank",
         }),
       ].join("\n"),

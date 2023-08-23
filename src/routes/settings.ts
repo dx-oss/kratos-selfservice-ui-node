@@ -55,14 +55,6 @@ export const createSettingsRoute: RouteCreator =
 
     const session = req.session
 
-    // Create a logout URL
-    const logoutUrl =
-      (
-        await frontend
-          .createBrowserLogoutFlow({ cookie: req.header("cookie") })
-          .catch(() => ({ data: { logout_url: "" } }))
-      ).data.logout_url || ""
-
     const identityCredentialTrait =
       session?.identity.traits.email || session?.identity.traits.username || ""
 
@@ -73,7 +65,17 @@ export const createSettingsRoute: RouteCreator =
 
     return frontend
       .getSettingsFlow({ id: flow, cookie: req.header("cookie") })
-      .then(({ data: flow }) => {
+      .then(async ({ data: flow }) => {
+        const logoutUrl =
+          (await frontend
+            .createBrowserLogoutFlow({
+              cookie: req.header("cookie"),
+              returnTo:
+                (return_to && return_to.toString()) || flow.return_to || "",
+            })
+            .then(({ data }) => data.logout_url)
+            .catch(() => "")) || ""
+
         const conditionalLinks: NavSectionLinks[] = [
           {
             name: "Profile",
@@ -149,7 +151,7 @@ export const createSettingsRoute: RouteCreator =
               }),
             Typography({
               children:
-                "Here you can manage settings related to your account. Keep in mind that certain actions require a you to re-authenticate.",
+                "Here you can manage settings related to your account. Keep in mind that certain actions require you to re-authenticate.",
               color: "foregroundMuted",
               size: "small",
             }),

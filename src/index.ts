@@ -10,19 +10,24 @@ import { middleware as middlewareLogger } from "./pkg/logger"
 import {
   register404Route,
   register500Route,
+  registerConsentPostRoute,
+  registerConsentRoute,
   registerErrorRoute,
   registerHealthRoute,
   registerLoginRoute,
   registerRecoveryRoute,
   registerRegistrationRoute,
+  registerSessionsRoute,
   registerSettingsRoute,
   registerStaticRoutes,
   registerVerificationRoute,
   registerWelcomeRoute,
 } from "./routes"
-import { registerSessionsRoute } from "./routes/sessions"
+
+const baseUrl = process.env.BASE_PATH || "/"
 
 const app = express()
+const router = express.Router()
 
 app.use(middlewareLogger)
 app.use(cookieParser())
@@ -39,23 +44,27 @@ app.engine(
   }),
 )
 
-registerHealthRoute(app)
-registerLoginRoute(app)
-registerRecoveryRoute(app)
-registerRegistrationRoute(app)
-registerSettingsRoute(app)
-registerVerificationRoute(app)
-registerSessionsRoute(app)
-registerWelcomeRoute(app)
-registerErrorRoute(app)
+registerHealthRoute(router)
+registerLoginRoute(router)
+registerConsentRoute(app)
+registerConsentPostRoute(app)
+registerRecoveryRoute(router)
+registerRegistrationRoute(router)
+registerSettingsRoute(router)
+registerVerificationRoute(router)
+registerSessionsRoute(router)
+registerWelcomeRoute(router)
+registerErrorRoute(router)
 
-app.get("/", (req: Request, res: Response) => {
+router.get("/", (req: Request, res: Response) => {
   res.redirect(303, "welcome")
 })
 
-registerStaticRoutes(app)
-register404Route(app)
-register500Route(app)
+registerStaticRoutes(router)
+register404Route(router)
+register500Route(router)
+
+app.use(baseUrl, router)
 
 const port = Number(process.env.PORT) || 3000
 
