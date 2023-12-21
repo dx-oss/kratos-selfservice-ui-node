@@ -10,12 +10,22 @@ import {
   RouteCreator,
   RouteRegistrator,
 } from "../pkg"
-import { UiNodeInputAttributes } from "@ory/client"
+import { UiNode, UiNodeInputAttributes } from "@ory/client"
 import { UserSettingsScreen } from "@ory/elements-markup"
 import {
   filterNodesByGroups,
   isUiNodeInputAttributes,
 } from "@ory/integrations/ui"
+
+const requireFirstAndLastName = (node: UiNode) =>
+  ["traits.first_name", "traits.last_name"].includes(
+    (node.attributes as any)?.name,
+  )
+    ? {
+        ...node,
+        attributes: { ...node.attributes, required: true },
+      }
+    : node
 
 export const createSettingsRoute: RouteCreator =
   (createHelpers) => async (req, res, next) => {
@@ -43,6 +53,7 @@ export const createSettingsRoute: RouteCreator =
     return frontend
       .getSettingsFlow({ id: flow, cookie: req.header("cookie") })
       .then(async ({ data: flow }) => {
+        flow.ui.nodes = flow.ui.nodes.map(requireFirstAndLastName)
         const logoutUrl =
           (await frontend
             .createBrowserLogoutFlow({
