@@ -74,6 +74,11 @@ export const createSettingsRoute: RouteCreator =
             settingsCardContainerClassName: "spacing-32",
           },
           {
+            backUrl: flow.return_to || getUrlForFlow(kratosBrowserUrl, "login"),
+            flow,
+            logoutUrl,
+          },
+          {
             locale: res.locals.lang,
           },
         )
@@ -85,7 +90,7 @@ export const createSettingsRoute: RouteCreator =
           settingsScreen: settingsScreen.Body,
           webAuthnHandler: filterNodesByGroups({
             nodes: flow.ui.nodes,
-            groups: ["webauthn"],
+            groups: ["webauthn", "passkey"],
             attributes: ["button"],
             withoutDefaultAttributes: true,
             withoutDefaultGroup: true,
