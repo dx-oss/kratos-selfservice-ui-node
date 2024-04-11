@@ -12,10 +12,6 @@ import {
 } from "../pkg"
 import { UiNode, UiNodeInputAttributes } from "@ory/client"
 import { UserSettingsScreen } from "@ory/elements-markup"
-import {
-  filterNodesByGroups,
-  isUiNodeInputAttributes,
-} from "@ory/integrations/ui"
 
 const requireFirstAndLastName = (node: UiNode) =>
   ["traits.first_name", "traits.last_name"].includes(
