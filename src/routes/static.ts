@@ -12,20 +12,7 @@ export const registerStaticRoutes: RouteRegistrator = (
   app,
   createHelpers = defaultConfig,
 ) => {
-  RegisterOryElementsExpress(
-    app,
-    {
-      ...defaultLightTheme,
-      accent: {
-        def: "#6E56D1",
-        muted: "#836fd7",
-        emphasis: "#5135c5",
-        disabled: "#E0E0E0",
-        subtle: "#eceefe",
-      },
-    },
-    createHelpers,
-  )
+  RegisterOryElementsExpress(app, defaultLightTheme, createHelpers)
   app.use("/", express.static("public"))
   app.use("/.well-known/ory/webauthn.js", (req, res) => {
     res.contentType("text/javascript")
