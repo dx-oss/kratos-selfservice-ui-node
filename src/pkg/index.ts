@@ -1,5 +1,6 @@
 // Copyright © 2022 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
+import { theme } from "../theme"
 import { RouteOptionsCreator } from "./route"
 import sdk, { apiBaseUrl } from "./sdk"
 import { filterNodesByGroups } from "./ui_nodes"
@@ -9,10 +10,6 @@ import {
   OAuth2LogoutRequest,
 } from "@ory/client"
 import { ButtonLink, Divider, MenuLink, Typography } from "@ory/elements-markup"
-import {
-  defaultLightTheme,
-  RegisterOryElementsExpress,
-} from "@ory/elements-markup"
 import { AxiosError } from "axios"
 import { NextFunction, Response } from "express"
 import { UnknownObject } from "express-handlebars/types"
@@ -33,53 +30,7 @@ export const getUrlForFlow = (
 
 export const defaultConfig: RouteOptionsCreator = () => {
   return {
-    theme: {
-      ...defaultLightTheme,
-      fontFamily: "Eudoxus sans",
-      accent: {
-        def: "#6E56D1",
-        muted: "#6E56D1",
-        emphasis: "#0077B6",
-        disabled: "#BABABA",
-        subtle: "#BDBDBD",
-      },
-      foreground: {
-        def: "#293C4B",
-        muted: "#616161",
-        subtle: "#9E9E9E",
-        disabled: "#BDBDBD",
-        onDark: "#FFFFFF",
-        onAccent: "#FFFFFF",
-        onDisabled: "#e0e0e0",
-      },
-      background: {
-        surface: "#FFFFFF",
-        canvas: "#F3F4F6",
-        subtle: "#EEEEEE",
-      },
-      error: {
-        def: "#C91616",
-        subtle: "#fce8ec",
-        muted: "#e95c7b",
-        emphasis: "#DF1642",
-      },
-      success: {
-        emphasis: "#1F8956",
-      },
-      border: {
-        def: "#B4A4F8",
-      },
-      text: {
-        def: "#FFFFFF",
-        disabled: "#757575",
-      },
-      input: {
-        background: "#FFFFFF",
-        disabled: "#E0E0E0",
-        placeholder: "#9E9E9E",
-        text: "#424242",
-      },
-    },
+    theme,
     apiBaseUrl: apiBaseUrl,
     kratosBrowserUrl: apiBaseUrl,
     faviconUrl: "favicon.ico",
