@@ -136,23 +136,7 @@ export const createLoginRoute: RouteCreator =
         }
 
         // Render the data using a view (e.g. Jade Template):
-        const initRegistrationQuery = new URLSearchParams({
-          return_to:
-            (return_to && return_to.toString()) || flow.return_to || "",
-        })
-        if (flow.oauth2_login_request?.challenge) {
-          initRegistrationQuery.set(
-            "login_challenge",
-            flow.oauth2_login_request.challenge,
-          )
-        }
-
         let initRecoveryUrl = ""
-        const initRegistrationUrl = getUrlForFlow(
-          kratosBrowserUrl,
-          "registration",
-          initRegistrationQuery,
-        )
         if (!flow.refresh) {
           initRecoveryUrl = getUrlForFlow(
             kratosBrowserUrl,
@@ -178,7 +162,6 @@ export const createLoginRoute: RouteCreator =
               cardImage: logoUrl,
               additionalProps: {
                 forgotPasswordURL: initRecoveryUrl,
-                signupURL: initRegistrationUrl,
                 logoutURL: logoutUrl,
               },
             },
