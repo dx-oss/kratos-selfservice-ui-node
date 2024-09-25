@@ -163,6 +163,7 @@ export const createLoginRoute: RouteCreator =
               additionalProps: {
                 forgotPasswordURL: initRecoveryUrl,
                 logoutURL: logoutUrl,
+                loginURL: initFlowUrl,
               },
             },
             { locale: res.locals.lang },
